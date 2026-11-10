@@ -1,0 +1,19 @@
+module "cloud_run" {
+  source                           = "../../modules/cloud_run_service"
+  project_id                       = var.project_id
+  region                           = var.region
+  service_name                     = var.service_name
+  environment                      = var.environment
+  image                            = var.image
+  cpu                              = var.cpu
+  memory                           = var.memory
+  timeout                          = var.timeout
+  max_instance_request_concurrency = var.concurrency
+  min_instance_count               = var.min_instances
+  max_instance_count               = var.max_instances
+  ingress                          = var.ingress
+  allow_unauthenticated            = var.allow_unauthenticated
+  runtime_service_account_id       = var.runtime_service_account_id
+  secret_env                       = var.secret_env
+  labels                           = var.labels
+}

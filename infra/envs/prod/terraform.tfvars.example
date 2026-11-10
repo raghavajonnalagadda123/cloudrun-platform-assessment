@@ -1,0 +1,19 @@
+project_id = "REPLACE_WITH_PROD_PROJECT_ID"
+region = "us-central1"
+service_name = "sample-api-prod"
+environment = "prod"
+image = "us-central1-docker.pkg.dev/REPLACE_PROJECT/apps/sample-api@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+cpu = "1"
+memory = "512Mi"
+timeout = "30s"
+concurrency = 80
+min_instances = 1
+max_instances = 30
+ingress = "INGRESS_TRAFFIC_INTERNAL_ONLY"
+allow_unauthenticated = false
+runtime_service_account_id = "sample-api-prod-runtime"
+secret_env = {}
+labels = {
+  owner = "platform"
+  assessment = "practical"
+}
