@@ -16,7 +16,7 @@ The objective was to build and containerize a sample application, create reusabl
 - Workload Identity Federation configuration placeholders.
 - Incident response runbook and rollback script.
 - Two-region high availability architecture design.
-- Ownership and AI-assisted tooling disclosure.
+- Assessment notes and AI-assisted tooling disclosure.
 
 ## 1. Project Scope
 
@@ -203,8 +203,6 @@ The finding remains unresolved and is documented rather than suppressed. No unne
 
 **Security assessment:** The Debian operating system scan returned zero HIGH/CRITICAL findings, and the application dependencies listed above had no reported findings. However, the remaining setuptools attribution finding means the image should not be described as completely vulnerability-free.
 
-The scan was completed locally. An equivalent image scan still needs to be integrated into the GitHub Actions PR workflow before claiming automated CI image scanning.
-
 For additional investigation, Trivy can generate a JSON report:
 
 ```bash
@@ -343,7 +341,32 @@ The repository contains two workflows:
 - `.github/workflows/pr.yml` – PR validation.
 - `.github/workflows/release.yml` – main-branch release workflow.
 
-The intended CI/CD process is:
+### PR validation
+
+The PR validation workflow was executed successfully using GitHub Actions.
+
+All three jobs completed successfully:
+
+| Job | Validation | Result |
+|---|---|---|
+| `app` | Python application tests and Ruff linting | Passed |
+| `terraform` | Terraform formatting, module tests, dev and prod validation | Passed |
+| `container` | Docker build and Trivy security scans | Passed |
+
+The container job performs two Trivy scans:
+
+- Filesystem scan for vulnerabilities, misconfigurations, and secrets.
+- Docker image vulnerability scan.
+
+Both scans use Trivy v0.76.2.
+
+The filesystem scan is configured to fail the workflow for HIGH or CRITICAL findings, subject to the `ignore-unfixed` setting.
+
+The Docker image scan currently uses `exit-code: "0"`. It reports findings but does not fail the workflow. This is intentional because of the unresolved setuptools attribution finding identified during local testing.
+
+A successful image scan execution confirms that the scan ran; it does not necessarily mean that the image has zero vulnerabilities.
+
+### Intended CI/CD process
 
 1. Run application tests and linting.
 2. Validate Terraform formatting, configuration, and tests.
@@ -379,9 +402,8 @@ Before production use:
 - Protect the production apply job with an approval gate.
 - Retain the reviewed Terraform plan and apply that exact plan without regenerating it.
 - Configure production deployment concurrency.
-- Integrate a Trivy image scan after the Docker image build in the PR workflow.
 
-**Current limitation:** The workflows contain the intended WIF integration points, but the actual GCP identity provider, IAM bindings, GitHub environment configuration, and live deployment have not been provisioned or tested. The local Trivy scan is complete, but automated PR image scanning remains a follow-up task.
+**Current limitation:** The PR validation workflow has been executed successfully. The release workflow includes the intended WIF integration points, but the actual GCP identity provider, IAM bindings, GitHub environment configuration, and live deployment have not been provisioned or tested.
 
 ## 8. Rollback
 
@@ -434,30 +456,35 @@ The design also considers recovery, failback, dependencies, RTO, RPO, IAM, secre
 
 This is an architecture proposal only; it has not been deployed in GCP.
 
-## 11. Local Validation Results
+## 11. Validation Results
 
-The following checks were completed in the local development environment:
+The following checks were completed during local development and through GitHub Actions:
 
 | Validation | Result |
 |---|---|
-| Python application tests | 3 passed in the recorded test run |
-| Ruff linting | Passed |
+| Local Python application tests | 3 passed in the recorded test run |
+| Local Ruff linting | Passed |
+| GitHub Actions application tests | Passed |
+| GitHub Actions Ruff linting | Passed |
 | Docker v4 image build | Passed |
 | Docker application startup | Passed |
 | `/health`, `/ready`, `/version` | HTTP 200 |
 | Docker health check | Healthy |
 | Non-root runtime user | Verified (`app`, UID 999) |
-| Terraform formatting | Passed |
-| Terraform module validation | Passed |
-| Terraform module tests | 2 passed, 0 failed |
-| Dev Terraform validation | Passed |
-| Prod Terraform validation | Passed |
-| Trivy v4 image scan | Completed; one HIGH attribution finding remains |
-| Live GCP deployment | Not performed |
+| Local Terraform formatting | Passed |
+| Local Terraform module validation | Passed |
+| Local Terraform module tests | 2 passed, 0 failed |
+| Local dev Terraform validation | Passed |
+| Local prod Terraform validation | Passed |
+| GitHub Actions Terraform job | Passed |
+| GitHub Actions Docker build and Trivy scans | Passed |
+| Trivy v0.76.2 local image scan | Completed; one HIGH attribution finding remains |
 
-The recorded Python test run used Python 3.14.3 and completed with three passing tests. Dependency deprecation warnings were reported in that run. The tests should be rerun after any subsequent dependency changes.
+The recorded local Python test run used Python 3.14.3 and completed with three passing tests. A Starlette deprecation warning concerning the use of `httpx` with its test client was reported in that run.
 
-Trivy v0.76.2 was used for the local Docker image scan. Its remaining setuptools finding and the investigation evidence are documented above.
+The GitHub Actions application job uses Python 3.12 and completed successfully.
+
+Trivy v0.76.2 was used for the local Docker image scan and is also pinned in the PR workflow. The remaining setuptools finding and investigation evidence are documented above.
 
 ## 12. Cleanup
 
@@ -479,4 +506,4 @@ Live GCP deployment was not performed, avoiding unnecessary cloud costs and long
 
 The two-region high availability solution is documented as a design rather than presented as a deployed implementation.
 
-Final configuration, local validation, and implementation decisions were reviewed as part of the assessment.
+Implementation decisions and final changes were reviewed and validated as part of the assessment.
