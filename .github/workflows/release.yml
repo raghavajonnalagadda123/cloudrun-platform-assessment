@@ -19,6 +19,7 @@ env:
   AR_REPOSITORY: ${{ vars.AR_REPOSITORY }}
 jobs:
   build:
+    if: ${{ vars.GCP_WIF_PROVIDER != '' && vars.GCP_DEPLOYER_SERVICE_ACCOUNT != '' && vars.GCP_REGION != '' && vars.AR_REPOSITORY != '' && vars.DEV_PROJECT_ID != '' && vars.TF_STATE_BUCKET != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -111,7 +112,7 @@ jobs:
       - run: terraform -chdir=infra/envs/dev apply -auto-approve dev.tfplan
 
   plan_prod:
-    if: github.event_name == 'push' || inputs.deploy_production
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_production
     needs: [build, apply_dev]
     runs-on: ubuntu-latest
     permissions:
@@ -145,7 +146,7 @@ jobs:
           retention-days: 3
 
   apply_prod:
-    if: github.event_name == 'push' || inputs.deploy_production
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_production
     needs: [build, plan_prod]
     runs-on: ubuntu-latest
     permissions:
